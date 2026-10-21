@@ -2,17 +2,22 @@ import { Router } from "express";
 
 import {
   getEvents,
+  getEventById,
   createEvent,
-  updateEvent
+  updateEvent,
+  changeEventStatus
 } from "../controllers/events.controller.js";
 
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { authorizeRoles } from "../middlewares/authorize.middleware.js";
 import { eventOwnership } from "../middlewares/eventOwnership.middleware.js";
+import { optionalAuth } from "../middlewares/optionalAuth.middleware.js";
 
 const router = Router();
 
-router.get("/", getEvents);
+router.get("/", optionalAuth, getEvents);
+
+router.get("/:id", optionalAuth, getEventById);
 
 router.post(
   "/",
@@ -21,12 +26,18 @@ router.post(
   createEvent
 );
 
-router.patch(
+router.put(
   "/:id",
   authMiddleware,
-  authorizeRoles("organizer", "admin"),
   eventOwnership,
   updateEvent
+);
+
+router.patch(
+  "/:id/status",
+  authMiddleware,
+  eventOwnership,
+  changeEventStatus
 );
 
 export default router;

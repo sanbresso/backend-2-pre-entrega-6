@@ -1,61 +1,87 @@
 # Plataforma de Eventos e Inscripciones
 
-## Pre-entrega 5 — Roles y autorización profesional
+## Pre-entrega 6 — Entidad Events y lógica de negocio
 
-Proyecto de **PBE II — Diseño y Arquitectura Backend (Coderhouse)** desarrollado con Node.js, Express, MongoDB Atlas y Mongoose. Esta entrega continúa las anteriores e incorpora **autorización por roles (RBAC)**, **validación de propiedad de eventos (Ownership)** y protección de rutas con respuestas HTTP diferenciadas.
+Proyecto de **PBE II — Diseño y Arquitectura Backend (Coderhouse)** desarrollado con Node.js, Express, MongoDB Atlas y Mongoose.
 
-### Evolución del proyecto
+Esta entrega continúa el proyecto iniciado en la Pre-entrega 1 e incorpora el CRUD de eventos solicitado, validaciones de negocio, control de permisos por roles y propiedad, filtros avanzados, paginación, ordenamiento y cancelación lógica.
 
-- **Pre-entrega 1:** arquitectura modular de Express, modelos y rutas iniciales.
-- **Pre-entrega 2:** registro de usuarios, bcrypt, validaciones y persistencia MongoDB.
-- **Pre-entrega 3:** login, JWT firmado, cookie HttpOnly `currentUser`, sesión actual y logout.
+## 1. Evolución del proyecto
+
+- **Pre-entrega 1:** arquitectura modular con Express, modelos y rutas iniciales.
+- **Pre-entrega 2:** registro de usuarios, bcrypt, validaciones y persistencia en MongoDB.
+- **Pre-entrega 3:** autenticación JWT, cookies HttpOnly, sesión actual y logout.
 - **Pre-entrega 4:** estrategias Passport.js `register`, `login` y `current`.
-- **Pre-entrega 5:** roles `user`, `organizer`, `admin`, middlewares de autorización reutilizables, creación/edición de eventos y ruta administrativa.
+- **Pre-entrega 5:** autorización por roles (RBAC), control de propiedad de eventos y rutas administrativas.
+- **Pre-entrega 6:** modelo Event completo, reglas de negocio, endpoints de gestión, filtros, paginación, ordenamiento y control de estados.
 
-## Tecnologías
+## 2. Tecnologías utilizadas
 
-- Node.js y JavaScript ESM (`"type": "module"`)
-- Express 5, MongoDB Atlas, Mongoose
-- bcrypt, jsonwebtoken, cookie-parser
-- Passport.js (`passport-local`, `passport-jwt`)
-- dotenv, Git y GitHub
+- Node.js y JavaScript ES Modules.
+- Express 5.
+- MongoDB Atlas y Mongoose.
+- Passport.js, passport-local y passport-jwt.
+- JSON Web Tokens (JWT).
+- bcrypt.
+- cookie-parser.
+- dotenv.
+- Postman para pruebas manuales.
+- Git y GitHub.
 
-## Instalación y ejecución
+## 3. Instalación y ejecución
 
-1. Clonar el repositorio público de la Pre-entrega 5 (cuando esté publicado):
+### Clonar el repositorio
 
-   ```bash
-   git clone https://github.com/sanbresso/backend-2-pre-entrega-5.git
-   cd backend-2-pre-entrega-5
-   ```
+```bash
+git clone https://github.com/sanbresso/backend-2-pre-entrega-6.git
+cd backend-2-pre-entrega-6
+```
 
-2. Instalar dependencias:
+### Instalar dependencias
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-3. Crear un archivo `.env` en la raíz a partir de `.env.example` y completar los valores privados:
+### Configurar variables de entorno
 
-   ```dotenv
-   PORT=8080
-   NODE_ENV=development
-   MONGO_URL=mongodb+srv://USUARIO:CONTRASENA@TU_CLUSTER.mongodb.net/plataforma_eventos
-   JWT_SECRET=REEMPLAZAR_POR_CLAVE_SECRETA_SEGURA
-   JWT_EXPIRES_IN=1h
-   ```
+Crear un archivo `.env` a partir de `.env.example` y configurar los valores correspondientes:
 
-4. Iniciar el servidor con MongoDB conectado:
+```dotenv
+PORT=8080
+NODE_ENV=development
+MONGO_URL=mongodb+srv://USUARIO:CONTRASENA@TU_CLUSTER.mongodb.net/plataforma_eventos
+JWT_SECRET=REEMPLAZAR_POR_CLAVE_SECRETA_SEGURA
+JWT_EXPIRES_IN=1h
+```
 
-   ```bash
-   npm run dev
-   ```
+Las variables deben adaptarse al entorno y a la conexión MongoDB correspondiente.
 
-   Para ejecución normal, usar `npm start`. El script de desarrollo usa **`node --watch src/server.js`** (no nodemon). La URL base de los ejemplos es `http://localhost:8080`.
+### Iniciar el servidor
 
-> **Seguridad:** nunca subir `.env`, `node_modules/`, JWT, contraseñas, hashes o credenciales de MongoDB. `.env.example` contiene solo valores de ejemplo y `.gitignore` excluye los archivos privados. El comando `npm test` todavía es un marcador; las verificaciones de esta entrega fueron manuales con Postman.
+Modo desarrollo:
 
-## Arquitectura
+```bash
+npm run dev
+```
+
+Modo normal:
+
+```bash
+npm start
+```
+
+El script de desarrollo utiliza `node --watch src/server.js`.
+
+URL base utilizada en las pruebas:
+
+`http://localhost:8080`
+
+**Seguridad:** nunca publicar `.env`, contraseñas, tokens JWT, credenciales de MongoDB ni `node_modules`.
+
+## 4. Arquitectura
+
+El proyecto utiliza una arquitectura modular que separa responsabilidades:
 
 ```text
 src/
@@ -81,206 +107,485 @@ src/
 │   ├── sessions.service.js
 │   └── events.service.js
 ├── repositories/
-│   └── users.repository.js
+│   ├── users.repository.js
+│   └── events.repository.js
 ├── dao/
 │   └── users.dao.js
 ├── middlewares/
 │   ├── auth.middleware.js
 │   ├── authorize.middleware.js
 │   ├── eventOwnership.middleware.js
+│   ├── optionalAuth.middleware.js
 │   └── error.middleware.js
 └── utils/
     ├── hash.js
     └── jwt.js
 ```
 
-Las **rutas** enlazan middlewares y controladores; los **controladores** construyen respuestas HTTP; los **servicios** contienen reglas de negocio y validaciones; **repositorios/DAO** encapsulan acceso a usuarios; **modelos** definen los esquemas Mongoose. Los middlewares concentran las verificaciones de autenticación, rol y propiedad del evento.
+### Responsabilidades
 
-## Usuarios y registro seguro
+- **Models:** esquemas de datos y validaciones de Mongoose.
+- **Repositories/DAO:** operaciones de persistencia y consulta a MongoDB.
+- **Services:** reglas de negocio, validaciones, visibilidad y transiciones de estado.
+- **Controllers:** manejo de solicitudes y respuestas HTTP.
+- **Routes:** definición de endpoints y aplicación de middlewares.
+- **Middlewares:** autenticación, autorización, propiedad y manejo de errores.
 
-El modelo `User` define `first_name`, `last_name`, `email`, `password`, `role` y timestamps. El campo `role` acepta `user`, `organizer` y `admin`, con valor predeterminado **`user`**. La contraseña se guarda como hash de bcrypt y su campo está configurado con `select: false`.
+## 5. Modelo Event
 
-**POST `/api/sessions/register`** acepta nombre, apellido, email y contraseña (mínimo ocho caracteres). El servicio siempre asigna `role: "user"`, aun cuando el cliente intente enviar `"role": "admin"` o `"role": "organizer"`.
+El modelo Event contiene los siguientes campos:
+
+| Campo | Tipo | Validación |
+|---|---|---|
+| title | String | Obligatorio |
+| description | String | Obligatorio |
+| category | String | Obligatorio |
+| date | Date | Obligatorio |
+| location | String | Obligatorio |
+| capacity | Number | Entero mayor que 0 |
+| price | Number | Mayor o igual a 0 |
+| status | String | Enum de estados permitidos |
+| organizer | ObjectId | Referencia obligatoria a User |
+
+El campo `organizer` utiliza una referencia de Mongoose:
+
+```javascript
+organizer: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  required: true,
+  immutable: true
+}
+```
+
+No se almacena el objeto completo del usuario dentro del evento.
+
+Todos los eventos se crean inicialmente con estado `draft`.
+
+Estados permitidos:
+
+- `draft`: borrador.
+- `published`: publicado.
+- `cancelled`: cancelado.
+- `finished`: finalizado.
+
+El esquema también incorpora `timestamps` para registrar las fechas de creación y actualización.
+
+## 6. Usuarios, autenticación y roles
+
+El modelo User contiene nombre, apellido, email, contraseña protegida y rol.
+
+Los roles disponibles son:
+
+- `user`
+- `organizer`
+- `admin`
+
+El registro público asigna automáticamente el rol `user`, sin permitir que el cliente se otorgue permisos superiores.
+
+Las contraseñas se almacenan mediante hash bcrypt.
+
+La autenticación utiliza JWT guardado en la cookie HttpOnly `currentUser`.
+
+### Endpoints de sesiones
+
+| Método | Ruta | Acceso |
+|---|---|---|
+| GET | `/api/sessions` | Público |
+| POST | `/api/sessions/register` | Público |
+| POST | `/api/sessions/login` | Público |
+| GET | `/api/sessions/current` | Autenticado |
+| POST | `/api/sessions/logout` | Público |
+
+### Registro
+
+`POST /api/sessions/register`
+
+```json
+{
+  "first_name": "Usuario",
+  "last_name": "Ejemplo",
+  "email": "usuario@example.com",
+  "password": "ClaveDePrueba123!"
+}
+```
+
+La contraseña debe tener al menos ocho caracteres.
+
+### Inicio de sesión
+
+`POST /api/sessions/login`
+
+```json
+{
+  "email": "usuario@example.com",
+  "password": "ClaveDePrueba123!"
+}
+```
+
+Respuesta exitosa:
+
+```json
+{
+  "status": "success",
+  "message": "Login correcto"
+}
+```
+
+El backend establece la cookie `currentUser`, que posteriormente se utiliza para autenticar solicitudes protegidas.
+
+## 7. Endpoints de eventos
+
+| Método | Ruta | Acceso |
+|---|---|---|
+| POST | `/api/events` | organizer o admin |
+| GET | `/api/events` | Público |
+| GET | `/api/events/:id` | Público, con visibilidad controlada |
+| PUT | `/api/events/:id` | Organizador propietario o admin |
+| PATCH | `/api/events/:id/status` | Organizador propietario o admin |
+
+No se implementa eliminación física de eventos. Las cancelaciones se realizan mediante cambio de estado.
+
+### Crear evento
+
+`POST /api/events`
+
+Requiere autenticación y rol `organizer` o `admin`.
 
 Ejemplo:
 
 ```json
 {
-  "first_name": "Ana",
-  "last_name": "Pérez",
-  "email": "ana@example.com",
-  "password": "ClaveDePrueba123!",
-  "role": "admin"
+  "title": "Workshop de Backend",
+  "description": "Taller práctico de Node.js y Express",
+  "category": "workshop",
+  "date": "2030-12-15T18:00:00.000Z",
+  "location": "Montevideo",
+  "capacity": 30,
+  "price": 500
 }
 ```
 
-El rol de la cuenta creada será **`user`** y la respuesta **201 Created** no expondrá la contraseña ni el hash. Errores habituales: **400** por datos inválidos y **409** por email duplicado. La promoción de roles se hizo manualmente en MongoDB Atlas únicamente con cuentas de prueba; no hay una ruta pública para conceder privilegios.
+Respuesta: `201 Created`.
 
-## Roles y matriz de permisos
+El organizador se obtiene automáticamente de `req.user.id`.
 
-| Acción | `user` | `organizer` | `admin` |
-|---|:---:|:---:|:---:|
-| Consultar eventos publicados | ✅ | ✅ | ✅ |
-| Consultar sesión propia | ✅ | ✅ | ✅ |
-| Crear eventos | ❌ | ✅ | ✅ |
-| Modificar eventos propios | ❌ | ✅ | ✅ |
-| Modificar eventos de otros | ❌ | ❌ | ✅ |
-| Ver todos los usuarios | ❌ | ❌ | ✅ |
+No se permite enviar manualmente `organizer` ni `status` en el body de creación.
 
-`GET /api/events` es público y, por lo tanto, también está disponible sin autenticación. En esta entrega, la autorización RBAC se expresa mediante `authorizeRoles(...allowedRoles)` en las rutas. La propiedad del evento se valida adicionalmente en `eventOwnership`.
+### Listar eventos
 
-## Autenticación, autorización y Ownership
+`GET /api/events`
 
-1. **Autenticación:** `authMiddleware` busca el JWT en la cookie HttpOnly `currentUser`, verifica el token y asigna `req.user` (`id`, `email`, `role`). Si falta o es inválido devuelve **401**. La ruta `/api/sessions/current` conserva la autenticación a través de la estrategia Passport `current`.
-2. **Autorización RBAC:** `authorizeRoles("organizer", "admin")` o `authorizeRoles("admin")` comprueba el rol después de autenticar. Si el usuario autenticado no tiene permisos devuelve **403**.
-3. **Ownership:** para `PATCH /api/events/:id`, `eventOwnership` busca el evento y compara `event.organizer` con `req.user.id`. Solo pasa un organizador propietario o un administrador.
-4. **Controlador:** únicamente se ejecuta si se superaron las verificaciones previas.
+El listado utiliza filtros dinámicos, paginación y ordenamiento.
 
-El rol no se toma del body enviado por el usuario: procede del JWT validado. Como mejora futura, se puede consultar el rol vigente en la base de datos para que los cambios de permisos tengan efecto antes de la expiración del token.
+#### Parámetros disponibles
 
-## Rutas HTTP
+| Parámetro | Descripción |
+|---|---|
+| status | Filtrar por estado |
+| category | Filtrar por categoría |
+| location | Buscar por ubicación, de forma parcial |
+| dateFrom | Fecha mínima |
+| dateTo | Fecha máxima |
+| page | Número de página, predeterminado 1 |
+| limit | Resultados por página, predeterminado 10 |
+| sort | Campo y dirección de ordenamiento |
 
-| Método | Ruta | Acceso | Respuestas principales |
-|---|---|---|---|
-| GET | `/api/health` | Público | 200 |
-| GET | `/api/sessions` | Público | 200 |
-| POST | `/api/sessions/register` | Público | 201, 400, 409 |
-| POST | `/api/sessions/login` | Público | 200, 400, 401 |
-| GET | `/api/sessions/current` | Autenticado | 200, 401 |
-| POST | `/api/sessions/logout` | Cierre de cookie | 200 |
-| GET | `/api/events` | Público: solo publicados | 200 |
-| POST | `/api/events` | `organizer`, `admin` | 201, 400, 401, 403 |
-| PATCH | `/api/events/:id` | `organizer` propietario, `admin` | 200, 400, 401, 403, 404 |
-| GET | `/api/admin/users` | Solo `admin` | 200, 401, 403 |
+El límite máximo por página es 100.
 
-### Login y cookie
+Campos permitidos para ordenar:
 
-**POST `/api/sessions/login`**
+- `date`
+- `price`
+- `title`
+- `createdAt`
+
+Se utiliza el prefijo `-` para el orden descendente.
+
+Ejemplo:
+
+```http
+GET /api/events?status=published&category=workshop&page=1&limit=5&sort=-date
+```
+
+Respuesta ilustrativa:
 
 ```json
 {
-  "email": "organizador@example.com",
-  "password": "ClaveDePrueba123!"
+  "data": [],
+  "page": 1,
+  "limit": 5,
+  "total": 0,
+  "totalPages": 0
 }
 ```
 
-Respuesta **200 OK**:
+El contenido de `data` y los totales dependen de los eventos existentes.
 
-```json
-{ "status": "success", "message": "Login correcto" }
-```
+### Visibilidad de eventos
 
-El servidor establece `currentUser` con `HttpOnly`, `SameSite=Lax`, una hora de duración y `Secure` en producción. El token no se incluye en el JSON de respuesta. `GET /api/sessions/current` devuelve el `id`, `email` y `role` del usuario autenticado. `POST /api/sessions/logout` elimina la cookie; esto no revoca criptográficamente un JWT que alguien haya conservado.
+Las consultas están condicionadas por los permisos:
 
-### Crear evento
+| Usuario | Visibilidad |
+|---|---|
+| Visitante | Eventos publicados |
+| user | Eventos publicados |
+| organizer | Eventos publicados y sus propios eventos |
+| admin | Todos los eventos |
 
-**POST `/api/events`** (con cookie de `organizer` o `admin`):
+El listado utiliza autenticación opcional.
 
-```json
-{
-  "title": "Congreso Tech 2026",
-  "description": "Encuentro de tecnología",
-  "date": "2026-12-15",
-  "capacity": 100
-}
-```
+Un visitante puede consultar eventos publicados sin iniciar sesión, pero no puede acceder a borradores, cancelados o finalizados mediante el filtro por estado.
 
-Respuesta ilustrativa **201 Created**:
+### Consultar evento por ID
+
+`GET /api/events/:id`
+
+La respuesta exitosa utiliza:
 
 ```json
 {
   "status": "success",
   "payload": {
-    "id": "ID_DEL_EVENTO",
-    "title": "Congreso Tech 2026",
-    "description": "Encuentro de tecnología",
-    "date": "2026-12-15T00:00:00.000Z",
-    "capacity": 100,
-    "status": "draft",
-    "organizer": "ID_DEL_USUARIO_AUTENTICADO"
+    "_id": "ID_DEL_EVENTO",
+    "title": "Workshop de Backend",
+    "status": "published"
   }
 }
 ```
 
-El organizador se obtiene de `req.user.id`, **nunca** de `req.body.organizer`. Los eventos nuevos se crean como `draft`. Por eso no aparecen en `GET /api/events`, que devuelve solo los eventos con estado `published`.
+El ejemplo muestra los campos principales.
 
-### Modificar evento
+Los organizadores pueden consultar sus propios borradores y los administradores pueden consultar eventos de cualquier estado.
 
-**PATCH `/api/events/:id`** con cookie autorizada y un ID de evento real:
+Cuando un visitante intenta consultar un evento privado, el servicio responde `404 Not Found`, evitando revelar su existencia.
+
+### Actualizar evento
+
+`PUT /api/events/:id`
+
+Requiere autenticación.
+
+Solo pueden actualizarlo:
+
+- El organizador propietario.
+- Un administrador.
+
+Ejemplo:
 
 ```json
 {
-  "title": "Congreso Tech 2026 - Actualizado",
-  "capacity": 120
+  "title": "Workshop de Backend Avanzado",
+  "capacity": 50,
+  "price": 750
 }
 ```
 
-Un organizador solo puede modificar los recursos cuyo `organizer` coincida con su ID; un administrador puede modificar cualquiera. La actualización admite `title`, `description`, `date` y `capacity`, pero no permite cambiar el propietario ni publicar arbitrariamente mediante estos campos.
+La implementación admite actualizaciones parciales de campos permitidos mediante PUT.
 
-### Consultar usuarios (solo admin)
+Campos modificables:
 
-**GET `/api/admin/users`** devuelve **200 OK** y un arreglo `payload` con identificador, nombre, apellido, email, rol y fecha de creación. Se emplea una selección explícita de campos en MongoDB; **no se devuelven contraseñas ni hashes**.
+- title
+- description
+- category
+- location
+- date
+- capacity
+- price
 
-## Códigos de error
+No pueden modificarse `organizer` ni `status` mediante este endpoint.
 
-| Código | Significado | Ejemplo |
-|---|---|---|
-| **400 Bad Request** | Datos inválidos | Título vacío o ID de evento mal formado |
-| **401 Unauthorized** | No autenticado | Cookie ausente, inválida o vencida |
-| **403 Forbidden** | Autenticado sin permiso | `user` crea evento; `organizer` modifica evento ajeno |
-| **404 Not Found** | Recurso inexistente | Evento no encontrado |
-| **409 Conflict** | Conflicto de negocio | Email ya registrado |
-| **500 Internal Server Error** | Fallo imprevisto | Error interno, sin exponer detalles técnicos |
+Los eventos cancelados o finalizados no admiten modificaciones.
 
-Ejemplo **401**:
+### Cambiar estado
 
-```json
-{ "status": "error", "message": "No autenticado" }
-```
+`PATCH /api/events/:id/status`
 
-Ejemplo **403** por rol:
+Requiere autenticación y autorización sobre el evento.
 
-```json
-{ "status": "error", "message": "No tenés permisos para realizar esta acción" }
-```
-
-Ejemplo **403** por propiedad:
+Ejemplo:
 
 ```json
-{ "status": "error", "message": "No tenés permisos para modificar este evento" }
+{
+  "status": "published"
+}
 ```
 
-El middleware global conserva errores controlados con `statusCode` entre 400 y 599 y utiliza 500 para errores inesperados.
+La transición debe respetar las reglas de negocio.
 
-## Pruebas manuales realizadas en Postman
+## 8. Reglas de negocio
 
-| Prueba | HTTP observado |
-|---|---:|
-| `POST /api/events` sin cookie | 401 |
-| `POST /api/events` con `user` | 403 |
-| `POST /api/events` con `organizer` | 201 |
-| `PATCH /api/events/:id` con organizador propietario | 200 |
-| `PATCH /api/events/:id` con organizador no propietario | 403 |
-| `PATCH /api/events/:id` con administrador sobre evento ajeno | 200 |
-| `GET /api/admin/users` con administrador | 200 |
-| `GET /api/admin/users` con organizador | 403 |
-| `GET /api/admin/users` sin cookie | 401 |
-| `POST /api/events` con título vacío y organizer autenticado | 400 |
+### Validaciones de creación
 
-También se verificaron el registro, login, consulta de sesión actual y logout durante las entregas anteriores. Las pruebas son manuales: todavía no se implementó una suite automatizada.
+- El título, descripción, categoría y ubicación son obligatorios.
+- No se permiten campos de texto obligatorios vacíos.
+- La fecha debe ser válida y futura.
+- La capacidad debe ser un entero mayor que cero.
+- El precio debe ser un número mayor o igual que cero.
+- El organizador se asigna automáticamente.
+- El estado inicial siempre es `draft`.
 
-Para reproducir las pruebas: registrar cuentas de prueba; asignar manualmente los roles `organizer` o `admin` en MongoDB Atlas; **volver a iniciar sesión** para emitir un JWT actualizado; y enviar las solicitudes correspondientes con Postman. Para probar el 401, eliminar la cookie `currentUser`. Se recomienda adjuntar capturas con método, URL, código y respuesta, ocultando cookies, JWT y contraseñas.
+### Validaciones de actualización
 
-## Seguridad y alcance
+- No se permite modificar eventos cancelados.
+- No se permite modificar eventos finalizados.
+- No se permite cambiar manualmente el organizador.
+- El estado se modifica exclusivamente mediante su endpoint específico.
+- Se validan nuevamente los campos modificados.
 
-- El registro público asigna siempre `user` desde el servidor.
-- Los permisos se validan en middlewares del backend; ocultar botones del frontend no es protección suficiente.
-- Los eventos tienen un `organizer` obligatorio para permitir el control de propiedad.
-- El listado administrativo no incluye contraseñas ni hashes.
-- La consulta de eventos públicos filtra por `status: "published"`.
-- En sistemas desplegados públicamente convendría agregar protección CSRF, limitación de intentos de login, gestión de revocación de JWT y comprobación de roles vigentes contra MongoDB.
-- El CRUD completo de eventos, las inscripciones y las notificaciones quedan fuera del alcance implementado en esta pre-entrega.
+### Transiciones de estado
 
-## Publicación
+| Estado actual | Transiciones permitidas |
+|---|---|
+| draft | published, cancelled |
+| published | finished, cancelled |
+| cancelled | Ninguna |
+| finished | Ninguna |
 
-El repositorio público debe incluir `package.json`, `package-lock.json`, `.gitignore`, `.env.example`, `README.md` y el código fuente. **No** publicar `.env`, `node_modules`, secretos, credenciales reales ni cookies de sesión.
+No se puede publicar un evento cuya fecha ya haya pasado.
+
+No se puede finalizar un evento que todavía no haya comenzado.
+
+Los estados `cancelled` y `finished` se consideran terminales.
+
+### Cancelación lógica
+
+Para cancelar un evento se utiliza:
+
+```http
+PATCH /api/events/:id/status
+```
+
+```json
+{
+  "status": "cancelled"
+}
+```
+
+El documento permanece almacenado en MongoDB.
+
+No se utilizan operaciones de eliminación física para cancelar eventos.
+
+## 9. Autorización y propiedad
+
+Se utilizan tres mecanismos:
+
+1. `authMiddleware`: valida la autenticación mediante JWT.
+2. `authorizeRoles`: restringe las operaciones por rol.
+3. `eventOwnership`: comprueba que el usuario sea propietario del evento o administrador.
+
+El middleware `optionalAuth` permite identificar sesiones válidas en endpoints públicos sin exigir autenticación obligatoria.
+
+El rol y el identificador del usuario se obtienen del token validado, no del body.
+
+**Consideración de seguridad:** los cambios de rol en MongoDB requieren emitir un nuevo JWT mediante login. Como mejora para producción, sería conveniente consultar el estado y rol vigente del usuario en la base de datos.
+
+## 10. Manejo de errores
+
+La API utiliza códigos HTTP adecuados según el caso.
+
+| Código | Significado |
+|---|---|
+| 400 | Datos inválidos |
+| 401 | Usuario no autenticado |
+| 403 | Usuario sin permisos |
+| 404 | Recurso inexistente o no visible |
+| 409 | Conflicto o transición de estado inválida |
+| 500 | Error interno del servidor |
+
+Ejemplo de validación:
+
+```json
+{
+  "status": "error",
+  "message": "La capacidad debe ser un número entero mayor a 0"
+}
+```
+
+El middleware global contempla errores controlados, errores de validación de Mongoose, errores de conversión de tipos y conflictos por índices únicos.
+
+## 11. Pruebas manuales con Postman
+
+Se realizaron pruebas funcionales durante el desarrollo.
+
+| Prueba | Resultado esperado |
+|---|---|
+| Crear evento con rol user | 403 |
+| Crear evento con organizer | 201 |
+| Crear evento con fecha pasada | 400 |
+| Crear evento con capacidad 0 | 400 |
+| Organizador modifica evento propio | 200 |
+| Organizador modifica evento ajeno | 403 |
+| Administrador modifica evento ajeno | 200 |
+| Cancelar evento | 200 |
+| Intentar publicar evento cancelado | 409 |
+| Intentar modificar evento cancelado | 409 |
+| Listar eventos publicados | 200 |
+| Consultar borrador propio | 200 |
+| Consultar borrador sin autorización | 404 |
+| Consultar evento inexistente | 404 |
+| Filtrar por categoría y estado | 200 |
+| Filtrar por ubicación y rango de fechas | 200 |
+| Paginar resultados | 200 |
+| Ordenar por fecha ascendente y descendente | 200 |
+
+También se verificaron operaciones de registro, login y consulta de sesión en entregas anteriores.
+
+Las pruebas se realizaron manualmente con Postman. Actualmente no se incluye una suite de pruebas automatizadas; el script `npm test` permanece como marcador.
+
+Para reproducir las pruebas de roles:
+
+1. Registrar cuentas de prueba.
+2. Asignar roles de prueba mediante un procedimiento administrativo controlado en MongoDB.
+3. Volver a iniciar sesión para obtener un JWT actualizado.
+4. Realizar las solicitudes desde Postman.
+5. Verificar los códigos HTTP y las respuestas JSON.
+
+No compartir contraseñas, tokens o cookies reales en las evidencias.
+
+## 12. Seguridad y mejoras futuras
+
+Medidas implementadas:
+
+- Hash de contraseñas mediante bcrypt.
+- JWT en cookie HttpOnly.
+- Autenticación mediante Passport.js.
+- Autorización por roles.
+- Verificación de propiedad de eventos.
+- Restricción de campos modificables.
+- Validaciones de datos y reglas de negocio.
+- Protección de eventos privados.
+- Cancelación lógica.
+- Exclusión de secretos mediante `.gitignore`.
+
+Posibles mejoras futuras:
+
+- Pruebas automatizadas.
+- Protección CSRF y limitación de intentos de autenticación.
+- Verificación de roles vigentes en MongoDB.
+- Actualizaciones condicionales para proteger cambios concurrentes.
+- Índices adicionales para optimización de consultas.
+- Inscripciones, tickets y control de cupos.
+- Eventos de dominio y notificaciones.
+- Documentación interactiva con OpenAPI/Swagger.
+
+## 13. Entrega
+
+La Pre-entrega 6 se publica en un repositorio público de GitHub.
+
+Archivos requeridos:
+
+- `package.json`
+- `package-lock.json`
+- `.gitignore`
+- `.env.example`
+- `README.md`
+- Código fuente dentro de `src/`
+
+No se incluyen `.env`, `node_modules`, credenciales ni datos privados.
+
+**Repositorio:** https://github.com/sanbresso/backend-2-pre-entrega-6
+
+---
+
+Proyecto desarrollado como parte de **PBE II — Diseño y Arquitectura Backend, Coderhouse**.
